@@ -8,8 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
-	"github.com/evleria/mongo-crud/internal/repository"
-	"github.com/evleria/mongo-crud/internal/repository/entities"
+	"github.com/evleria/mongo-crud/backend/internal/repository"
+	"github.com/evleria/mongo-crud/backend/internal/repository/entities"
+	"github.com/evleria/mongo-crud/backend/internal/service"
 )
 
 // GetAllCats fetches all entities from cats collection
@@ -50,7 +51,7 @@ func GetCat(catsRepository repository.Cats) echo.HandlerFunc {
 }
 
 // AddNewCat creates a new entity in cats collection
-func AddNewCat(catsRepository repository.Cats) echo.HandlerFunc {
+func AddNewCat(catsService service.Cats) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		request := new(AddNewCatRequest)
 		err := ctx.Bind(request)
@@ -58,7 +59,7 @@ func AddNewCat(catsRepository repository.Cats) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		id, err := catsRepository.Insert(ctx.Request().Context(), request.Name, request.Color, request.Age, request.Price)
+		id, err := catsService.CreateNew(ctx.Request().Context(), request.Name, request.Color, request.Age, request.Price)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
@@ -87,7 +88,7 @@ func DeleteCat(catsRepository repository.Cats) echo.HandlerFunc {
 }
 
 // UpdatePrice updates price of a cat by id
-func UpdatePrice(catsRepository repository.Cats) echo.HandlerFunc {
+func UpdatePrice(catsService service.Cats) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		idParam := ctx.Param("id")
 		id, err := uuid.Parse(idParam)
@@ -100,7 +101,7 @@ func UpdatePrice(catsRepository repository.Cats) echo.HandlerFunc {
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
-		err = catsRepository.UpdatePrice(ctx.Request().Context(), id, request.Price)
+		err = catsService.UpdatePrice(ctx.Request().Context(), id, request.Price)
 		if errors.Is(err, repository.ErrNotFound) {
 			return echo.NewHTTPError(http.StatusNotFound)
 		} else if err != nil {

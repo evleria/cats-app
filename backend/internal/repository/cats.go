@@ -5,12 +5,11 @@ import (
 	"context"
 	"errors"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/evleria/mongo-crud/internal/repository/entities"
+	"github.com/evleria/mongo-crud/backend/internal/repository/entities"
 )
 
 var (
