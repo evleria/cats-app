@@ -2,7 +2,12 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
+
+	"github.com/google/uuid"
+
+	"github.com/evleria/mongo-crud/internal/repository/entities"
 
 	"github.com/labstack/echo/v4"
 
@@ -19,14 +24,30 @@ func GetAllCats(catsRepository repository.Cats) echo.HandlerFunc {
 
 		response := GetAllCatsResponse{}
 		for _, cat := range cats {
-			response.Items = append(response.Items, Cat{
-				ID:    cat.ID.String(),
-				Name:  cat.Name,
-				Color: cat.Color,
-				Age:   cat.Age,
-			})
+			response = append(response, mapCat(cat))
 		}
-		return ctx.JSON(http.StatusOK, cats)
+		return ctx.JSON(http.StatusOK, response)
+	}
+}
+
+// GetCat fetches a single cat from cats collection by ID
+func GetCat(catsRepository repository.Cats) echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		idParam := ctx.Param("id")
+		id, err := uuid.Parse(idParam)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+
+		cat, err := catsRepository.GetOne(ctx.Request().Context(), id)
+		if errors.Is(err, repository.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound)
+		} else if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		response := GetCatResponse(mapCat(cat))
+		return ctx.JSON(http.StatusOK, response)
 	}
 }
 
@@ -51,6 +72,31 @@ func AddNewCat(catsRepository repository.Cats) echo.HandlerFunc {
 	}
 }
 
+// DeleteCat deletes a single cat from cats collection by ID
+func DeleteCat(catRepository repository.Cats) echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		idParam := ctx.Param("id")
+		id, err := uuid.Parse(idParam)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+		err = catRepository.Delete(ctx.Request().Context(), id)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusNotFound)
+		}
+		return nil
+	}
+}
+
+func mapCat(cat entities.Cat) Cat {
+	return Cat{
+		ID:    cat.ID.String(),
+		Name:  cat.Name,
+		Color: cat.Color,
+		Age:   cat.Age,
+	}
+}
+
 // AddNewCatRequest represents a request to add new cat
 type AddNewCatRequest struct {
 	Name  string `json:"name"`
@@ -64,9 +110,10 @@ type AddNewCatResponse struct {
 }
 
 // GetAllCatsResponse represents a response to get all cats
-type GetAllCatsResponse struct {
-	Items []Cat `json:"items"`
-}
+type GetAllCatsResponse []Cat
+
+// GetCatResponse represents a response to get a cat
+type GetCatResponse Cat
 
 // Cat represents a cat
 type Cat struct {

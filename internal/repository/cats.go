@@ -3,6 +3,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
 
@@ -12,10 +13,17 @@ import (
 	"github.com/evleria/mongo-crud/internal/repository/entities"
 )
 
+var (
+	// ErrNotFound means entity is not found in repository
+	ErrNotFound = errors.New("not found")
+)
+
 // Cats contains methods for manipulating with cats collection
 type Cats interface {
 	Insert(ctx context.Context, name, color string, age int) (uuid.UUID, error)
 	GetAll(ctx context.Context) ([]entities.Cat, error)
+	GetOne(ctx context.Context, id uuid.UUID) (entities.Cat, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type cats struct {
@@ -64,4 +72,24 @@ func (c *cats) GetAll(ctx context.Context) ([]entities.Cat, error) {
 		return nil, err
 	}
 	return result, nil
+}
+
+func (c *cats) GetOne(ctx context.Context, id uuid.UUID) (entities.Cat, error) {
+	cat := entities.Cat{}
+	err := c.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&cat)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return cat, ErrNotFound
+	} else if err != nil {
+		return cat, err
+	}
+	return cat, nil
+}
+
+func (c *cats) Delete(ctx context.Context, id uuid.UUID) error {
+	if r, err := c.collection.DeleteOne(ctx, bson.M{"_id": id}); err != nil {
+		return err
+	} else if r.DeletedCount == 0 {
+		return ErrNotFound
+	}
+	return nil
 }

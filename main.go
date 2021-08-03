@@ -26,7 +26,9 @@ func main() {
 
 	catsGroup := e.Group("/api/cats")
 	catsGroup.GET("", handler.GetAllCats(catsRepository))
+	catsGroup.GET("/:id", handler.GetCat(catsRepository))
 	catsGroup.POST("", handler.AddNewCat(catsRepository))
+	catsGroup.DELETE("/:id", handler.DeleteCat(catsRepository))
 
 	check(e.Start(":5000"))
 }
