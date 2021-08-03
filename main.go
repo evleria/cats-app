@@ -6,12 +6,12 @@ import (
 	"log"
 	"os"
 
-	"github.com/evleria/mongo-crud/internal/handler"
-
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	"github.com/evleria/mongo-crud/internal/handler"
 	"github.com/evleria/mongo-crud/internal/repository"
 )
 
@@ -24,10 +24,14 @@ func main() {
 
 	e := echo.New()
 
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
 	catsGroup := e.Group("/api/cats")
 	catsGroup.GET("", handler.GetAllCats(catsRepository))
 	catsGroup.GET("/:id", handler.GetCat(catsRepository))
 	catsGroup.POST("", handler.AddNewCat(catsRepository))
+	catsGroup.PUT("/:id/price", handler.UpdatePrice(catsRepository))
 	catsGroup.DELETE("/:id", handler.DeleteCat(catsRepository))
 
 	check(e.Start(":5000"))

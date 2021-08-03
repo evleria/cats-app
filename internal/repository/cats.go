@@ -20,10 +20,11 @@ var (
 
 // Cats contains methods for manipulating with cats collection
 type Cats interface {
-	Insert(ctx context.Context, name, color string, age int) (uuid.UUID, error)
+	Insert(ctx context.Context, name, color string, age int, price float64) (uuid.UUID, error)
 	GetAll(ctx context.Context) ([]entities.Cat, error)
 	GetOne(ctx context.Context, id uuid.UUID) (entities.Cat, error)
 	Delete(ctx context.Context, id uuid.UUID) error
+	UpdatePrice(ctx context.Context, id uuid.UUID, price float64) error
 }
 
 type cats struct {
@@ -37,12 +38,13 @@ func NewCatsRepository(mongoClient *mongo.Client, dbName string) Cats {
 	}
 }
 
-func (c *cats) Insert(ctx context.Context, name, color string, age int) (uuid.UUID, error) {
+func (c *cats) Insert(ctx context.Context, name, color string, age int, price float64) (uuid.UUID, error) {
 	cat := entities.Cat{
 		ID:    uuid.New(),
 		Name:  name,
 		Color: color,
 		Age:   age,
+		Price: price,
 	}
 
 	_, err := c.collection.InsertOne(ctx, cat)
@@ -89,6 +91,15 @@ func (c *cats) Delete(ctx context.Context, id uuid.UUID) error {
 	if r, err := c.collection.DeleteOne(ctx, bson.M{"_id": id}); err != nil {
 		return err
 	} else if r.DeletedCount == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (c *cats) UpdatePrice(ctx context.Context, id uuid.UUID, price float64) error {
+	if r, err := c.collection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"price": price}}); err != nil {
+		return err
+	} else if r.ModifiedCount == 0 {
 		return ErrNotFound
 	}
 	return nil

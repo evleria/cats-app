@@ -6,12 +6,10 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-
-	"github.com/evleria/mongo-crud/internal/repository/entities"
-
 	"github.com/labstack/echo/v4"
 
 	"github.com/evleria/mongo-crud/internal/repository"
+	"github.com/evleria/mongo-crud/internal/repository/entities"
 )
 
 // GetAllCats fetches all entities from cats collection
@@ -55,12 +53,12 @@ func GetCat(catsRepository repository.Cats) echo.HandlerFunc {
 func AddNewCat(catsRepository repository.Cats) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		request := new(AddNewCatRequest)
-		err := ctx.Bind(&request)
+		err := ctx.Bind(request)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		id, err := catsRepository.Insert(ctx.Request().Context(), request.Name, request.Color, request.Age)
+		id, err := catsRepository.Insert(ctx.Request().Context(), request.Name, request.Color, request.Age, request.Price)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
@@ -73,18 +71,42 @@ func AddNewCat(catsRepository repository.Cats) echo.HandlerFunc {
 }
 
 // DeleteCat deletes a single cat from cats collection by ID
-func DeleteCat(catRepository repository.Cats) echo.HandlerFunc {
+func DeleteCat(catsRepository repository.Cats) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		idParam := ctx.Param("id")
 		id, err := uuid.Parse(idParam)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
-		err = catRepository.Delete(ctx.Request().Context(), id)
+		err = catsRepository.Delete(ctx.Request().Context(), id)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusNotFound)
 		}
 		return nil
+	}
+}
+
+// UpdatePrice updates price of a cat by id
+func UpdatePrice(catsRepository repository.Cats) echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		idParam := ctx.Param("id")
+		id, err := uuid.Parse(idParam)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+
+		request := new(UpdatePriceRequest)
+		err = ctx.Bind(request)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+		err = catsRepository.UpdatePrice(ctx.Request().Context(), id, request.Price)
+		if errors.Is(err, repository.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound)
+		} else if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+		return ctx.NoContent(http.StatusOK)
 	}
 }
 
@@ -94,14 +116,16 @@ func mapCat(cat entities.Cat) Cat {
 		Name:  cat.Name,
 		Color: cat.Color,
 		Age:   cat.Age,
+		Price: cat.Price,
 	}
 }
 
 // AddNewCatRequest represents a request to add new cat
 type AddNewCatRequest struct {
-	Name  string `json:"name"`
-	Color string `json:"color"`
-	Age   int    `json:"age"`
+	Name  string  `json:"name"`
+	Color string  `json:"color"`
+	Age   int     `json:"age"`
+	Price float64 `json:"price"`
 }
 
 // AddNewCatResponse represents a response to add new cat
@@ -115,10 +139,16 @@ type GetAllCatsResponse []Cat
 // GetCatResponse represents a response to get a cat
 type GetCatResponse Cat
 
+// UpdatePriceRequest represents request to update price
+type UpdatePriceRequest struct {
+	Price float64 `json:"price"`
+}
+
 // Cat represents a cat
 type Cat struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Color string `json:"color"`
-	Age   int    `json:"age"`
+	ID    string  `json:"id"`
+	Name  string  `json:"name"`
+	Color string  `json:"color"`
+	Age   int     `json:"age"`
+	Price float64 `json:"price"`
 }

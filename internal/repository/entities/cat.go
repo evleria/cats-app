@@ -9,4 +9,5 @@ type Cat struct {
 	Name  string    `bson:"name"`
 	Color string    `bson:"color"`
 	Age   int       `bson:"age"`
+	Price float64   `bson:"price"`
 }
