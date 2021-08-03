@@ -12,6 +12,15 @@ services:
       - MONGO_HOST=mongo
       - REDIS_HOST=redis
 
+  consumer:
+    build: ./consumer
+    deploy:
+      replicas: 3
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+
   mongo:
     image: mongo:5.0
     hostname: mongo
