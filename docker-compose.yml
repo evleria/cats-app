@@ -1,0 +1,26 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "5001:5000"
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_USER=root
+      - MONGO_PASS=password
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+
+  mongo:
+    image: mongo:5.0
+    hostname: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
