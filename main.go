@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/labstack/echo/v4/middleware"
 	"log"
 	"os"
+
+	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
@@ -35,7 +36,6 @@ func main() {
 
 	e := echo.New()
 
-	//e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
 	catsGroup := e.Group("/api/cats")

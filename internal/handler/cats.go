@@ -18,13 +18,10 @@ func GetAllCats(catsRepository repository.Cats) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		cats, err := catsRepository.GetAll(ctx.Request().Context())
 		if err != nil {
-			return err
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
 
-		response := GetAllCatsResponse{}
-		for _, cat := range cats {
-			response = append(response, mapCat(cat))
-		}
+		response := GetAllCatsResponse(mapCats(cats))
 		return ctx.JSON(http.StatusOK, response)
 	}
 }
@@ -119,6 +116,14 @@ func mapCat(cat entities.Cat) Cat {
 		Age:   cat.Age,
 		Price: cat.Price,
 	}
+}
+
+func mapCats(cats []entities.Cat) []Cat {
+	result := make([]Cat, 0, len(cats))
+	for _, cat := range cats {
+		result = append(result, mapCat(cat))
+	}
+	return result
 }
 
 // AddNewCatRequest represents a request to add new cat

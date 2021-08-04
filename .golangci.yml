@@ -91,3 +91,4 @@ issues:
         - errcheck
         - dupl
         - gosec
+        - gochecknoglobals
