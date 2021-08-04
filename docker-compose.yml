@@ -1,6 +1,6 @@
 services:
-  backend:
-    build: ./backend
+  backend-0:
+    build: .
     ports:
       - "5001:5000"
     depends_on:
@@ -12,13 +12,17 @@ services:
       - MONGO_HOST=mongo
       - REDIS_HOST=redis
 
-  consumer:
-    build: ./consumer
-    deploy:
-      replicas: 3
+  backend-1:
+    build: .
+    ports:
+      - "5002:5000"
     depends_on:
+      - mongo
       - redis
     environment:
+      - MONGO_USER=root
+      - MONGO_PASS=password
+      - MONGO_HOST=mongo
       - REDIS_HOST=redis
 
   mongo:

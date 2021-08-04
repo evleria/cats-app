@@ -1,3 +1,4 @@
+// Package service encapsulates usecases
 package service
 
 import (
@@ -5,10 +6,11 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/evleria/mongo-crud/backend/internal/producer"
-	"github.com/evleria/mongo-crud/backend/internal/repository"
+	"github.com/evleria/mongo-crud/internal/producer"
+	"github.com/evleria/mongo-crud/internal/repository"
 )
 
+// Cats contains usecase logic for cats
 type Cats interface {
 	UpdatePrice(ctx context.Context, id uuid.UUID, price float64) error
 	CreateNew(ctx context.Context, name, color string, age int, price float64) (uuid.UUID, error)
@@ -19,6 +21,7 @@ type cats struct {
 	priceProducer producer.Price
 }
 
+// NewCatsService creates new cats service
 func NewCatsService(catsRepository repository.Cats, priceProducer producer.Price) Cats {
 	return &cats{
 		repository:    catsRepository,

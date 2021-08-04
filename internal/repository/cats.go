@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/evleria/mongo-crud/backend/internal/repository/entities"
+	"github.com/evleria/mongo-crud/internal/repository/entities"
 )
 
 var (

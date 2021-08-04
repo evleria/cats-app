@@ -3,19 +3,21 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/labstack/echo/v4/middleware"
 	"log"
 	"os"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/evleria/mongo-crud/backend/internal/handler"
-	"github.com/evleria/mongo-crud/backend/internal/producer"
-	"github.com/evleria/mongo-crud/backend/internal/repository"
-	"github.com/evleria/mongo-crud/backend/internal/service"
+	"github.com/evleria/mongo-crud/internal/consumer"
+	"github.com/evleria/mongo-crud/internal/handler"
+	"github.com/evleria/mongo-crud/internal/producer"
+	"github.com/evleria/mongo-crud/internal/repository"
+	"github.com/evleria/mongo-crud/internal/service"
 )
 
 func main() {
@@ -33,7 +35,7 @@ func main() {
 
 	e := echo.New()
 
-	e.Use(middleware.Logger())
+	//e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
 	catsGroup := e.Group("/api/cats")
@@ -43,7 +45,26 @@ func main() {
 	catsGroup.PUT("/:id/price", handler.UpdatePrice(catsService))
 	catsGroup.DELETE("/:id", handler.DeleteCat(catsRepository))
 
+	go consumePrices(redisClient)
+
 	check(e.Start(":5000"))
+}
+
+func consumePrices(redisClient *redis.Client) {
+	priceConsumer := consumer.NewPriceConsumer(redisClient)
+
+	lastID := "0"
+	for {
+		id, err := priceConsumer.Consume(context.Background(), lastID, func(id uuid.UUID, price float64) error {
+			log.Println(id.String(), price)
+			return nil
+		})
+
+		if err != nil {
+			log.Println(err.Error())
+		}
+		lastID = id
+	}
 }
 
 func getMongoURI() (mongoURI, dbName string) {

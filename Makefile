@@ -6,9 +6,9 @@ compose-up:
 	docker-compose up -d
 compose-down:
 	docker-compose down
-lint-backend:
-	golangci-lint run ./backend/internal/... && golangci-lint run ./backend/main.go
+lint:
+	golangci-lint run ./internal/... && golangci-lint run ./main.go
 import:
 	goimports -local "github.com/evleria/mongo-crud" -w .
 
-.PHONY: swag, compose-build, compose-up, compose-down, lint-backend, import
+.PHONY: swag, compose-build, compose-up, compose-down, lint, import
