@@ -1,4 +1,4 @@
-package stream
+package producer
 
 import (
 	"context"
@@ -8,20 +8,20 @@ import (
 )
 
 type Price interface {
-	SendPriceUpdate(ctx context.Context, id uuid.UUID, price float64) error
+	Produce(ctx context.Context, id uuid.UUID, price float64) error
 }
 
 type price struct {
 	redis *redis.Client
 }
 
-func NewPriceStream(redisClient *redis.Client) Price {
+func NewPriceProducer(redisClient *redis.Client) Price {
 	return &price{
 		redis: redisClient,
 	}
 }
 
-func (p *price) SendPriceUpdate(ctx context.Context, id uuid.UUID, price float64) error {
+func (p *price) Produce(ctx context.Context, id uuid.UUID, price float64) error {
 	args := &redis.XAddArgs{
 		Stream: "price",
 		Values: map[string]interface{}{

@@ -13,9 +13,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/evleria/mongo-crud/backend/internal/handler"
+	"github.com/evleria/mongo-crud/backend/internal/producer"
 	"github.com/evleria/mongo-crud/backend/internal/repository"
 	"github.com/evleria/mongo-crud/backend/internal/service"
-	"github.com/evleria/mongo-crud/backend/internal/stream"
 )
 
 func main() {
@@ -28,8 +28,8 @@ func main() {
 	check(err)
 
 	catsRepository := repository.NewCatsRepository(mongoClient, dbName)
-	priceStream := stream.NewPriceStream(redisClient)
-	catsService := service.NewCatsService(catsRepository, priceStream)
+	priceProducer := producer.NewPriceProducer(redisClient)
+	catsService := service.NewCatsService(catsRepository, priceProducer)
 
 	e := echo.New()
 

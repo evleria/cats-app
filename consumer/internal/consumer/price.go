@@ -1,8 +1,9 @@
-package stream
+package consumer
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"strconv"
@@ -16,7 +17,7 @@ type price struct {
 	redis *redis.Client
 }
 
-func NewPriceStream(redisClient *redis.Client) Price {
+func NewPriceConsumer(redisClient *redis.Client) Price {
 	return &price{
 		redis: redisClient,
 	}
@@ -30,6 +31,8 @@ func (p *price) Consume(ctx context.Context, lastId string, callbackFunc func(id
 	if err != nil {
 		return lastId, err
 	}
+
+	fmt.Println("consume called")
 
 	for _, message := range r[0].Messages {
 		id, price, err := decodeMessage(message)

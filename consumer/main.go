@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/evleria/mongo-crud/consumer/internal/stream"
+	"github.com/evleria/mongo-crud/consumer/internal/consumer"
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"log"
@@ -15,11 +15,11 @@ func main() {
 	_, err := redisClient.Ping(context.Background()).Result()
 	check(err)
 
-	priceStream := stream.NewPriceStream(redisClient)
+	priceConsumer := consumer.NewPriceConsumer(redisClient)
 
 	lastId := "0"
 	for {
-		id, err := priceStream.Consume(context.Background(), lastId, func(id uuid.UUID, price float64) error {
+		id, err := priceConsumer.Consume(context.Background(), lastId, func(id uuid.UUID, price float64) error {
 			log.Println(id.String(), price)
 			return nil
 		})

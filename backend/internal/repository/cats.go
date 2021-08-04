@@ -98,7 +98,7 @@ func (c *cats) Delete(ctx context.Context, id uuid.UUID) error {
 func (c *cats) UpdatePrice(ctx context.Context, id uuid.UUID, price float64) error {
 	if r, err := c.collection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"price": price}}); err != nil {
 		return err
-	} else if r.ModifiedCount == 0 {
+	} else if r.MatchedCount == 0 {
 		return ErrNotFound
 	}
 	return nil
