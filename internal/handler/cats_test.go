@@ -73,14 +73,98 @@ func TestUpdatePrice(t *testing.T) {
 	s := new(service.MockCats)
 	id := bella.ID
 	req := UpdatePriceRequest{Price: 5.99}
-	s.On("UpdatePrice", mockContext, id, req.Price).
-		Return(nil)
-	ctx, rec := setup(http.MethodGet, req)
+	s.On("UpdatePrice", mockContext, id, req.Price).Return(nil)
+	ctx, rec := setup(http.MethodPut, req)
 	ctx.SetParamNames("id")
 	ctx.SetParamValues(id.String())
 
 	// Act
 	err := UpdatePrice(s)(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, "", rec.Body.String())
+}
+
+func TestGetCat(t *testing.T) {
+	// Arrange
+	r := new(repository.MockCats)
+	id := bella.ID
+	r.On("GetOne", mockContext, id).Return(bella, nil)
+	ctx, rec := setup(http.MethodGet, nil)
+	ctx.SetParamNames("id")
+	ctx.SetParamValues(id.String())
+
+	// Act
+	err := GetCat(r)(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, mustEncodeJSON(mapCat(bella)), rec.Body.String())
+}
+
+func TestGetCatMalformedId(t *testing.T) {
+	// Arrange
+	r := new(repository.MockCats)
+	ctx, _ := setup(http.MethodGet, nil)
+	ctx.SetParamNames("id")
+	ctx.SetParamValues("malformed-uuid")
+
+	// Act
+	err := GetCat(r)(ctx)
+
+	// Assert
+	require.Error(t, err)
+	require.Equal(t, echo.NewHTTPError(http.StatusBadRequest), err)
+}
+
+func TestGetCatNotFound(t *testing.T) {
+	// Arrange
+	r := new(repository.MockCats)
+	id := uuid.New().String()
+	r.On("GetOne", mockContext, mock.AnythingOfType("uuid.UUID")).Return(entities.Cat{}, repository.ErrNotFound)
+	ctx, _ := setup(http.MethodGet, nil)
+	ctx.SetParamNames("id")
+	ctx.SetParamValues(id)
+
+	// Act
+	err := GetCat(r)(ctx)
+
+	// Assert
+	require.Error(t, err)
+	require.Equal(t, echo.NewHTTPError(http.StatusNotFound), err)
+}
+
+func TestGetCatRepositoryFailed(t *testing.T) {
+	// Arrange
+	r := new(repository.MockCats)
+	id := uuid.New().String()
+	r.On("GetOne", mockContext, mock.AnythingOfType("uuid.UUID")).Return(entities.Cat{}, errSomeError)
+	ctx, _ := setup(http.MethodGet, nil)
+	ctx.SetParamNames("id")
+	ctx.SetParamValues(id)
+
+	// Act
+	err := GetCat(r)(ctx)
+
+	// Assert
+	require.Error(t, err)
+	require.Equal(t, echo.NewHTTPError(http.StatusInternalServerError, errSomeError.Error()), err)
+}
+
+func TestDeleteCat(t *testing.T) {
+	// Arrange
+	s := new(repository.MockCats)
+	id := bella.ID
+	s.On("Delete", mockContext, id).Return(nil)
+	ctx, rec := setup(http.MethodDelete, nil)
+	ctx.SetParamNames("id")
+	ctx.SetParamValues(id.String())
+
+	// Act
+	err := DeleteCat(s)(ctx)
 
 	// Assert
 	require.NoError(t, err)

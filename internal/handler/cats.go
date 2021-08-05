@@ -32,7 +32,7 @@ func GetCat(catsRepository repository.Cats) echo.HandlerFunc {
 		idParam := ctx.Param("id")
 		id, err := uuid.Parse(idParam)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+			return echo.NewHTTPError(http.StatusBadRequest)
 		}
 
 		cat, err := catsRepository.GetOne(ctx.Request().Context(), id)
