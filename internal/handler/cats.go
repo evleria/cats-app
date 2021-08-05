@@ -74,7 +74,7 @@ func DeleteCat(catsRepository repository.Cats) echo.HandlerFunc {
 		idParam := ctx.Param("id")
 		id, err := uuid.Parse(idParam)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+			return echo.NewHTTPError(http.StatusBadRequest)
 		}
 		err = catsRepository.Delete(ctx.Request().Context(), id)
 		if err != nil {

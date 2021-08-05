@@ -172,6 +172,38 @@ func TestDeleteCat(t *testing.T) {
 	require.Equal(t, "", rec.Body.String())
 }
 
+func TestDeleteCatFailed(t *testing.T) {
+	// Arrange
+	r := new(repository.MockCats)
+	ctx, _ := setup(http.MethodDelete, nil)
+	ctx.SetParamNames("id")
+	ctx.SetParamValues("malformed-uuid")
+
+	// Act
+	err := DeleteCat(r)(ctx)
+
+	// Assert
+	require.Error(t, err)
+	require.Equal(t, echo.NewHTTPError(http.StatusBadRequest), err)
+}
+
+func TestDeleteCatNotFound(t *testing.T) {
+	// Arrange
+	r := new(repository.MockCats)
+	id := uuid.New().String()
+	r.On("Delete", mockContext, mock.AnythingOfType("uuid.UUID")).Return(repository.ErrNotFound)
+	ctx, _ := setup(http.MethodDelete, nil)
+	ctx.SetParamNames("id")
+	ctx.SetParamValues(id)
+
+	// Act
+	err := DeleteCat(r)(ctx)
+
+	// Assert
+	require.Error(t, err)
+	require.Equal(t, echo.NewHTTPError(http.StatusNotFound), err)
+}
+
 func setup(method string, body interface{}) (echo.Context, *httptest.ResponseRecorder) {
 	jsonBody := ""
 	if body != nil {
