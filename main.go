@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"log"
 	"os"
-
-	"github.com/labstack/echo/v4/middleware"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -25,17 +26,37 @@ func main() {
 	mongoURI, dbName := getMongoURI()
 	mongoClient, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoURI))
 	check(err)
+	defer mongoClient.Disconnect(context.Background()) //nolint:errcheck,gocritic
 
 	redisClient := redis.NewClient(getRedisOptions())
 	_, err = redisClient.Ping(context.Background()).Result()
 	check(err)
+	defer redisClient.Close() //nolint:errcheck,gocritic
+
+	rabbitClient, err := amqp.Dial(getRabbitURL())
+	check(err)
+	defer rabbitClient.Close() //nolint:errcheck,gocritic
+
+	rabbitChannel, err := rabbitClient.Channel()
+	check(err)
+	defer rabbitChannel.Close() //nolint:errcheck,gocritic
+
+	_, err = rabbitChannel.QueueDeclare(
+		"price",
+		true,
+		false,
+		false,
+		false,
+		nil)
+	check(err)
+
+	go consumePrices(redisClient, rabbitChannel)
 
 	catsRepository := repository.NewCatsRepository(mongoClient, dbName)
-	priceProducer := producer.NewPriceProducer(redisClient)
+	priceProducer := producer.NewRedisPriceProducer(redisClient)
 	catsService := service.NewCatsService(catsRepository, priceProducer)
 
 	e := echo.New()
-
 	e.Use(middleware.Recover())
 
 	catsGroup := e.Group("/api/cats")
@@ -45,25 +66,21 @@ func main() {
 	catsGroup.PUT("/:id/price", handler.UpdatePrice(catsService))
 	catsGroup.DELETE("/:id", handler.DeleteCat(catsRepository))
 
-	go consumePrices(redisClient)
-
 	check(e.Start(":5000"))
 }
 
-func consumePrices(redisClient *redis.Client) {
-	priceConsumer := consumer.NewPriceConsumer(redisClient)
+func consumePrices(redisClient *redis.Client, rabbitChannel *amqp.Channel) {
+	redisPriceConsumer := consumer.NewPriceConsumer(redisClient, fmt.Sprintf("%d000-0", time.Now().Unix()))
+	rabbitPriceProducer := producer.NewRabbitPriceProducer(rabbitChannel, "", "price")
 
-	lastID := "0"
 	for {
-		id, err := priceConsumer.Consume(context.Background(), lastID, func(id uuid.UUID, price float64) error {
-			log.Println(id.String(), price)
-			return nil
+		err := redisPriceConsumer.Consume(context.Background(), func(id uuid.UUID, price float64) error {
+			return rabbitPriceProducer.Produce(context.Background(), id, price)
 		})
 
 		if err != nil {
 			log.Println(err.Error())
 		}
-		lastID = id
 	}
 }
 
@@ -87,6 +104,15 @@ func getRedisOptions() *redis.Options {
 		Addr:     addr,
 		Password: pass,
 	}
+}
+
+func getRabbitURL() string {
+	return fmt.Sprintf("amqp://%s:%s@%s:%s/",
+		getEnvVar("RABBIT_USER", "guest"),
+		getEnvVar("RABBIT_PASS", "guest"),
+		getEnvVar("RABBIT_HOST", "localhost"),
+		getEnvVar("RABBIT_PORT", "5672"),
+	)
 }
 
 func getEnvVar(key, fallback string) string {

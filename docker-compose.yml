@@ -6,11 +6,13 @@ services:
     depends_on:
       - mongo
       - redis
+      - rabbitmq
     environment:
       - MONGO_USER=root
       - MONGO_PASS=password
       - MONGO_HOST=mongo
       - REDIS_HOST=redis
+      - RABBIT_HOST=rabbitmq
 
   backend-1:
     build: .
@@ -19,11 +21,13 @@ services:
     depends_on:
       - mongo
       - redis
+      - rabbitmq
     environment:
       - MONGO_USER=root
       - MONGO_PASS=password
       - MONGO_HOST=mongo
       - REDIS_HOST=redis
+      - RABBIT_HOST=rabbitmq
 
   mongo:
     image: mongo:5.0
@@ -45,6 +49,16 @@ services:
     volumes:
       - redis-data:/data
 
+  rabbitmq:
+    image: "rabbitmq:3.9.1-management"
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
 volumes:
   mongo-data:
   redis-data:
+  rabbitmq-data:

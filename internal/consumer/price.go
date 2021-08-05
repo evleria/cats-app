@@ -12,44 +12,46 @@ import (
 
 // Price consuming for price stream
 type Price interface {
-	Consume(ctx context.Context, lastID string, callbackFunc func(id uuid.UUID, price float64) error) (string, error)
+	Consume(ctx context.Context, callbackFunc func(id uuid.UUID, price float64) error) error
 }
 
 type price struct {
-	redis *redis.Client
+	redis  *redis.Client
+	lastID string
 }
 
 // NewPriceConsumer creates new price consumer
-func NewPriceConsumer(redisClient *redis.Client) Price {
+func NewPriceConsumer(redisClient *redis.Client, startID string) Price {
 	return &price{
-		redis: redisClient,
+		redis:  redisClient,
+		lastID: startID,
 	}
 }
 
-func (p *price) Consume(ctx context.Context, lastID string, callbackFunc func(id uuid.UUID, price float64) error) (string, error) {
+func (p *price) Consume(ctx context.Context, callbackFunc func(id uuid.UUID, price float64) error) error {
 	args := &redis.XReadArgs{
-		Streams: []string{"price", lastID},
+		Streams: []string{"price", p.lastID},
 	}
 	r, err := p.redis.XRead(ctx, args).Result()
 	if err != nil {
-		return lastID, err
+		return err
 	}
 
 	for _, message := range r[0].Messages {
 		id, price, err := decodeMessage(message)
 		if err != nil {
-			return lastID, err
+			return err
 		}
 
 		err = callbackFunc(id, price)
 		if err != nil {
-			return lastID, err
+			return err
 		}
 
-		lastID = message.ID
+		p.lastID = message.ID
 	}
 
-	return lastID, nil
+	return nil
 }
 
 func decodeMessage(message redis.XMessage) (id uuid.UUID, price float64, err error) {

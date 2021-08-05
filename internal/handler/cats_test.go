@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/evleria/mongo-crud/internal/service"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,6 +16,7 @@ import (
 
 	"github.com/evleria/mongo-crud/internal/repository"
 	"github.com/evleria/mongo-crud/internal/repository/entities"
+	"github.com/evleria/mongo-crud/internal/service"
 )
 
 var (
