@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/evleria/mongo-crud/internal/service"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/evleria/mongo-crud/internal/repository"
 	"github.com/evleria/mongo-crud/internal/repository/entities"
-	"github.com/evleria/mongo-crud/internal/service"
 )
 
 var (
@@ -66,25 +66,6 @@ func TestGetAllCatsRepositoryFailed(t *testing.T) {
 	// Assert
 	require.Error(t, err)
 	require.Equal(t, echo.NewHTTPError(http.StatusInternalServerError, errSomeError.Error()), err)
-}
-
-func TestUpdatePrice(t *testing.T) {
-	// Arrange
-	s := new(service.MockCats)
-	id := bella.ID
-	req := UpdatePriceRequest{Price: 5.99}
-	s.On("UpdatePrice", mockContext, id, req.Price).Return(nil)
-	ctx, rec := setup(http.MethodPut, req)
-	ctx.SetParamNames("id")
-	ctx.SetParamValues(id.String())
-
-	// Act
-	err := UpdatePrice(s)(ctx)
-
-	// Assert
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, rec.Code)
-	require.Equal(t, "", rec.Body.String())
 }
 
 func TestGetCat(t *testing.T) {
@@ -154,6 +135,38 @@ func TestGetCatRepositoryFailed(t *testing.T) {
 	require.Equal(t, echo.NewHTTPError(http.StatusInternalServerError, errSomeError.Error()), err)
 }
 
+func TestAddNewCat(t *testing.T) {
+	// Arrange
+	s := new(service.MockCats)
+	req := AddNewCatRequest{"Mila", "black", 5, 7.99}
+	id := uuid.New()
+	s.On("CreateNew", mockContext, req.Name, req.Color, req.Age, req.Price).Return(id, nil)
+	ctx, rec := setup(http.MethodPost, req)
+
+	// Act
+	err := AddNewCat(s)(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, http.StatusCreated, rec.Code)
+	require.Equal(t, mustEncodeJSON(AddNewCatResponse{id.String()}), rec.Body.String())
+}
+
+func TestAddNewCatServiceFailed(t *testing.T) {
+	// Arrange
+	s := new(service.MockCats)
+	req := AddNewCatRequest{"Mila", "black", 5, 7.99}
+	s.On("CreateNew", mockContext, req.Name, req.Color, req.Age, req.Price).Return(nil, errSomeError)
+	ctx, _ := setup(http.MethodPost, req)
+
+	// Act
+	err := AddNewCat(s)(ctx)
+
+	// Assert
+	require.Error(t, err)
+	require.Equal(t, echo.NewHTTPError(http.StatusInternalServerError, errSomeError.Error()), err)
+}
+
 func TestDeleteCat(t *testing.T) {
 	// Arrange
 	s := new(repository.MockCats)
@@ -202,6 +215,25 @@ func TestDeleteCatNotFound(t *testing.T) {
 	// Assert
 	require.Error(t, err)
 	require.Equal(t, echo.NewHTTPError(http.StatusNotFound), err)
+}
+
+func TestUpdatePrice(t *testing.T) {
+	// Arrange
+	s := new(service.MockCats)
+	id := bella.ID
+	req := UpdatePriceRequest{Price: 5.99}
+	s.On("UpdatePrice", mockContext, id, req.Price).Return(nil)
+	ctx, rec := setup(http.MethodPut, req)
+	ctx.SetParamNames("id")
+	ctx.SetParamValues(id.String())
+
+	// Act
+	err := UpdatePrice(s)(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, "", rec.Body.String())
 }
 
 func setup(method string, body interface{}) (echo.Context, *httptest.ResponseRecorder) {
