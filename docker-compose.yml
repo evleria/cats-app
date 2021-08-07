@@ -1,6 +1,7 @@
 services:
   backend-0:
     build: .
+    command: sh -c "/wait && /server"
     ports:
       - "5001:5000"
     depends_on:
@@ -13,9 +14,12 @@ services:
       - MONGO_HOST=mongo
       - REDIS_HOST=redis
       - RABBIT_HOST=rabbitmq
+      - WAIT_HOSTS=rabbitmq:15672
+      - CONSUMER_NUMBER=0
 
   backend-1:
     build: .
+    command: sh -c "/wait && /server"
     ports:
       - "5002:5000"
     depends_on:
@@ -28,6 +32,8 @@ services:
       - MONGO_HOST=mongo
       - REDIS_HOST=redis
       - RABBIT_HOST=rabbitmq
+      - WAIT_HOSTS=rabbitmq:15672
+      - CONSUMER_NUMBER=1
 
   mongo:
     image: mongo:5.0

@@ -41,15 +41,6 @@ func main() {
 	check(err)
 	defer rabbitChannel.Close() //nolint:errcheck,gocritic
 
-	_, err = rabbitChannel.QueueDeclare(
-		"price",
-		true,
-		false,
-		false,
-		false,
-		nil)
-	check(err)
-
 	go consumePrices(redisClient, rabbitChannel)
 
 	catsRepository := repository.NewCatsRepository(mongoClient, dbName)
@@ -70,18 +61,30 @@ func main() {
 }
 
 func consumePrices(redisClient *redis.Client, rabbitChannel *amqp.Channel) {
-	redisPriceConsumer := consumer.NewPriceConsumer(redisClient, fmt.Sprintf("%d000-0", time.Now().Unix()))
-	rabbitPriceProducer := producer.NewRabbitPriceProducer(rabbitChannel, "", "price")
+	queueName := "price_" + getEnvVar("CONSUMER_NUMBER", "0")
+	rabbitPriceProducer, err := producer.NewRabbitPriceProducer(rabbitChannel, "price")
+	check(err)
+	rabbitPriceConsumer, err := consumer.NewRabbitPriceConsumer(rabbitChannel, queueName, "price")
+	check(err)
 
-	for {
-		err := redisPriceConsumer.Consume(context.Background(), func(id uuid.UUID, price float64) error {
-			return rabbitPriceProducer.Produce(context.Background(), id, price)
+	redisPriceConsumer := consumer.NewRedisPriceConsumer(redisClient, fmt.Sprintf("%d000-0", time.Now().Unix()))
+	go func() {
+		err := rabbitPriceConsumer.Consume(context.Background(), func(id uuid.UUID, price float64) error {
+			return nil
 		})
+		check(err)
+	}()
 
-		if err != nil {
-			log.Println(err.Error())
-		}
-	}
+	go func() {
+		err := redisPriceConsumer.Consume(context.Background(), func(id uuid.UUID, price float64) error {
+			err := rabbitPriceProducer.Produce(context.Background(), id, price)
+			if err != nil {
+				log.Println(err.Error())
+			}
+			return err
+		})
+		check(err)
+	}()
 }
 
 func getMongoURI() (mongoURI, dbName string) {

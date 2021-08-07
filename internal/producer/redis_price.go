@@ -2,6 +2,7 @@ package producer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
@@ -19,6 +20,7 @@ func NewRedisPriceProducer(redisClient *redis.Client) Price {
 }
 
 func (p *redisPrice) Produce(ctx context.Context, id uuid.UUID, price float64) error {
+	fmt.Printf("producing message to redis: {%v, %f}\n", id, price)
 	args := &redis.XAddArgs{
 		Stream: "price",
 		Values: map[string]interface{}{

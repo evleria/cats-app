@@ -10,18 +10,21 @@ import (
 )
 
 type rabbitPrice struct {
-	channel    *amqp.Channel
-	exchange   string
-	routingKey string
+	channel      *amqp.Channel
+	exchangeName string
 }
 
 // NewRabbitPriceProducer creates a new producer for rabbitMQ
-func NewRabbitPriceProducer(channel *amqp.Channel, exchange, routingKey string) Price {
-	return &rabbitPrice{
-		channel:    channel,
-		exchange:   exchange,
-		routingKey: routingKey,
+func NewRabbitPriceProducer(channel *amqp.Channel, exchangeName string) (Price, error) {
+	err := channel.ExchangeDeclare(exchangeName, amqp.ExchangeFanout, true, false, false, false, nil)
+	if err != nil {
+		return nil, err
 	}
+
+	return &rabbitPrice{
+		channel:      channel,
+		exchangeName: exchangeName,
+	}, nil
 }
 
 func (r *rabbitPrice) Produce(_ context.Context, id uuid.UUID, price float64) error {
@@ -34,11 +37,10 @@ func (r *rabbitPrice) Produce(_ context.Context, id uuid.UUID, price float64) er
 		return err
 	}
 
-	fmt.Printf("producing: %v\n", msg)
-
+	fmt.Printf("producing message to rabbit: {%v, %f}\n", id, price)
 	return r.channel.Publish(
-		r.exchange,
-		r.routingKey,
+		r.exchangeName,
+		"",
 		false,
 		false,
 		amqp.Publishing{

@@ -14,23 +14,16 @@ type MockPrice struct {
 	mock.Mock
 }
 
-// Consume provides a mock function with given fields: ctx, lastID, callbackFunc
-func (_m *MockPrice) Consume(ctx context.Context, lastID string, callbackFunc func(uuid.UUID, float64) error) (string, error) {
-	ret := _m.Called(ctx, lastID, callbackFunc)
+// Consume provides a mock function with given fields: ctx, callbackFunc
+func (_m *MockPrice) Consume(ctx context.Context, callbackFunc func(uuid.UUID, float64) error) error {
+	ret := _m.Called(ctx, callbackFunc)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, func(uuid.UUID, float64) error) string); ok {
-		r0 = rf(ctx, lastID, callbackFunc)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, func(uuid.UUID, float64) error) error); ok {
+		r0 = rf(ctx, callbackFunc)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, func(uuid.UUID, float64) error) error); ok {
-		r1 = rf(ctx, lastID, callbackFunc)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
