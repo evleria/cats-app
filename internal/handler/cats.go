@@ -90,7 +90,7 @@ func UpdatePrice(catsService service.Cats) echo.HandlerFunc {
 		idParam := ctx.Param("id")
 		id, err := uuid.Parse(idParam)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+			return echo.NewHTTPError(http.StatusBadRequest)
 		}
 
 		request := new(UpdatePriceRequest)

@@ -236,6 +236,22 @@ func TestUpdatePrice(t *testing.T) {
 	require.Equal(t, "", rec.Body.String())
 }
 
+func TestUpdatePriceMalformedId(t *testing.T) {
+	// Arrange
+	s := new(service.MockCats)
+	req := UpdatePriceRequest{Price: 5.99}
+	ctx, _ := setup(http.MethodPut, req)
+	ctx.SetParamNames("id")
+	ctx.SetParamValues("malformed-uuid")
+
+	// Act
+	err := UpdatePrice(s)(ctx)
+
+	// Assert
+	require.Error(t, err)
+	require.Equal(t, echo.NewHTTPError(http.StatusBadRequest), err)
+}
+
 func setup(method string, body interface{}) (echo.Context, *httptest.ResponseRecorder) {
 	jsonBody := ""
 	if body != nil {
