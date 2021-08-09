@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
+
+	"github.com/caarlos0/env/v6"
+
+	"github.com/evleria/mongo-crud/internal/config"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
@@ -23,27 +26,25 @@ import (
 )
 
 func main() {
-	mongoURI, dbName := getMongoURI()
-	mongoClient, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoURI))
-	check(err)
+	cfg := new(config.Сonfig)
+	check(env.Parse(cfg))
+
+	mongoClient, mongoDB := getMongo(cfg)
 	defer mongoClient.Disconnect(context.Background()) //nolint:errcheck,gocritic
 
-	redisClient := redis.NewClient(getRedisOptions())
-	_, err = redisClient.Ping(context.Background()).Result()
-	check(err)
+	redisClient := getRedis(cfg)
 	defer redisClient.Close() //nolint:errcheck,gocritic
 
-	rabbitClient, err := amqp.Dial(getRabbitURL())
-	check(err)
+	rabbitClient := getRabbit(cfg)
 	defer rabbitClient.Close() //nolint:errcheck,gocritic
 
 	rabbitChannel, err := rabbitClient.Channel()
 	check(err)
 	defer rabbitChannel.Close() //nolint:errcheck,gocritic
 
-	go consumePrices(redisClient, rabbitChannel)
+	go consumePrices(redisClient, rabbitChannel, cfg.ConsumerNumber)
 
-	catsRepository := repository.NewCatsRepository(mongoClient, dbName)
+	catsRepository := repository.NewCatsRepository(mongoDB)
 	priceProducer := producer.NewRedisPriceProducer(redisClient)
 	catsService := service.NewCatsService(catsRepository, priceProducer)
 
@@ -60,8 +61,8 @@ func main() {
 	check(e.Start(":5000"))
 }
 
-func consumePrices(redisClient *redis.Client, rabbitChannel *amqp.Channel) {
-	queueName := "price_" + getEnvVar("CONSUMER_NUMBER", "0")
+func consumePrices(redisClient *redis.Client, rabbitChannel *amqp.Channel, consumerNumber int) {
+	queueName := fmt.Sprintf("price_%d", consumerNumber)
 	rabbitPriceProducer, err := producer.NewRabbitPriceProducer(rabbitChannel, "price")
 	check(err)
 	rabbitPriceConsumer, err := consumer.NewRabbitPriceConsumer(rabbitChannel, queueName, "price")
@@ -87,42 +88,51 @@ func consumePrices(redisClient *redis.Client, rabbitChannel *amqp.Channel) {
 	}()
 }
 
-func getMongoURI() (mongoURI, dbName string) {
-	return fmt.Sprintf("mongodb://%s:%s@%s:%s",
-			getEnvVar("MONGO_USER", "root"),
-			getEnvVar("MONGO_PASS", "password"),
-			getEnvVar("MONGO_HOST", "localhost"),
-			getEnvVar("MONGO_PORT", "27017")),
-		getEnvVar("MONGO_DB", "test")
+func getMongo(cfg *config.Сonfig) (*mongo.Client, *mongo.Database) {
+	mongoURI, dbName := getMongoURI(cfg)
+
+	mongoClient, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoURI))
+	check(err)
+
+	db := mongoClient.Database(dbName)
+	return mongoClient, db
 }
 
-func getRedisOptions() *redis.Options {
-	addr := fmt.Sprintf("%s:%s",
-		getEnvVar("REDIS_HOST", "localhost"),
-		getEnvVar("REDIS_PORT", "6379"),
-	)
-	pass := getEnvVar("REDIS_PASS", "")
+func getMongoURI(cfg *config.Сonfig) (mongoURI, dbName string) {
+	return fmt.Sprintf("mongodb://%s:%s@%s:%d",
+			cfg.MongoUser,
+			cfg.MongoPassword,
+			cfg.MongoHost,
+			cfg.MongoPort),
+		cfg.MongoDB
+}
 
-	return &redis.Options{
-		Addr:     addr,
-		Password: pass,
+func getRedis(cfg *config.Сonfig) *redis.Client {
+	opts := &redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", cfg.RedisHost, cfg.RedisPort),
+		Password: cfg.RedisPass,
 	}
+
+	redisClient := redis.NewClient(opts)
+	_, err := redisClient.Ping(context.Background()).Result()
+	check(err)
+
+	return redisClient
 }
 
-func getRabbitURL() string {
-	return fmt.Sprintf("amqp://%s:%s@%s:%s/",
-		getEnvVar("RABBIT_USER", "guest"),
-		getEnvVar("RABBIT_PASS", "guest"),
-		getEnvVar("RABBIT_HOST", "localhost"),
-		getEnvVar("RABBIT_PORT", "5672"),
+func getRabbit(cfg *config.Сonfig) *amqp.Connection {
+	connection, err := amqp.Dial(getRabbitURL(cfg))
+	check(err)
+	return connection
+}
+
+func getRabbitURL(cfg *config.Сonfig) string {
+	return fmt.Sprintf("amqp://%s:%s@%s:%d/",
+		cfg.RabbitUser,
+		cfg.RabbitPass,
+		cfg.RabbitHost,
+		cfg.RabbitPort,
 	)
-}
-
-func getEnvVar(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
 }
 
 func check(err error) {

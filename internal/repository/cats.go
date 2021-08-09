@@ -31,9 +31,9 @@ type cats struct {
 }
 
 // NewCatsRepository creates new cats repository
-func NewCatsRepository(mongoClient *mongo.Client, dbName string) Cats {
+func NewCatsRepository(mongoDB *mongo.Database) Cats {
 	return &cats{
-		collection: mongoClient.Database(dbName).Collection("cats"),
+		collection: mongoDB.Collection("cats"),
 	}
 }
 

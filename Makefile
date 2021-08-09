@@ -1,9 +1,7 @@
 swag:
 	swag init --parseDependency --parseDepth=5
-compose-build:
-	docker-compose build
-compose-up:
-	docker-compose up -d
+compose:
+	docker-compose build && docker-compose up -d
 compose-down:
 	docker-compose down
 lint:
