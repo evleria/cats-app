@@ -16,4 +16,7 @@ RUN chmod +x /wait
 
 COPY --from=build /server /server
 
+EXPOSE 5000
+EXPOSE 6000
+
 CMD ["./server"]

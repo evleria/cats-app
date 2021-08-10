@@ -41,12 +41,12 @@ var (
 
 func TestGetAllCats(t *testing.T) {
 	// Arrange
-	r := new(repository.MockCats)
-	r.On("GetAll", mockContext).Return(cats, nil)
+	s := new(service.MockCats)
+	s.On("GetAll", mockContext).Return(cats, nil)
 	ctx, rec := setup(http.MethodGet, nil)
 
 	// Act
-	err := GetAllCats(r)(ctx)
+	err := GetAllCats(s)(ctx)
 
 	// Assert
 	require.NoError(t, err)
@@ -56,12 +56,12 @@ func TestGetAllCats(t *testing.T) {
 
 func TestGetAllCatsRepositoryFailed(t *testing.T) {
 	// Arrange
-	r := new(repository.MockCats)
-	r.On("GetAll", mockContext).Return(nil, errSomeError)
+	s := new(service.MockCats)
+	s.On("GetAll", mockContext).Return(nil, errSomeError)
 	ctx, _ := setup(http.MethodGet, nil)
 
 	// Act
-	err := GetAllCats(r)(ctx)
+	err := GetAllCats(s)(ctx)
 
 	// Assert
 	require.Error(t, err)
@@ -70,15 +70,15 @@ func TestGetAllCatsRepositoryFailed(t *testing.T) {
 
 func TestGetCat(t *testing.T) {
 	// Arrange
-	r := new(repository.MockCats)
+	s := new(service.MockCats)
 	id := bella.ID
-	r.On("GetOne", mockContext, id).Return(bella, nil)
+	s.On("GetOne", mockContext, id).Return(bella, nil)
 	ctx, rec := setup(http.MethodGet, nil)
 	ctx.SetParamNames("id")
 	ctx.SetParamValues(id.String())
 
 	// Act
-	err := GetCat(r)(ctx)
+	err := GetCat(s)(ctx)
 
 	// Assert
 	require.NoError(t, err)
@@ -88,13 +88,13 @@ func TestGetCat(t *testing.T) {
 
 func TestGetCatMalformedId(t *testing.T) {
 	// Arrange
-	r := new(repository.MockCats)
+	s := new(service.MockCats)
 	ctx, _ := setup(http.MethodGet, nil)
 	ctx.SetParamNames("id")
 	ctx.SetParamValues("malformed-uuid")
 
 	// Act
-	err := GetCat(r)(ctx)
+	err := GetCat(s)(ctx)
 
 	// Assert
 	require.Error(t, err)
@@ -103,15 +103,15 @@ func TestGetCatMalformedId(t *testing.T) {
 
 func TestGetCatNotFound(t *testing.T) {
 	// Arrange
-	r := new(repository.MockCats)
+	s := new(service.MockCats)
 	id := uuid.New().String()
-	r.On("GetOne", mockContext, mock.AnythingOfType("uuid.UUID")).Return(entities.Cat{}, repository.ErrNotFound)
+	s.On("GetOne", mockContext, mock.AnythingOfType("uuid.UUID")).Return(entities.Cat{}, repository.ErrNotFound)
 	ctx, _ := setup(http.MethodGet, nil)
 	ctx.SetParamNames("id")
 	ctx.SetParamValues(id)
 
 	// Act
-	err := GetCat(r)(ctx)
+	err := GetCat(s)(ctx)
 
 	// Assert
 	require.Error(t, err)
@@ -120,15 +120,15 @@ func TestGetCatNotFound(t *testing.T) {
 
 func TestGetCatRepositoryFailed(t *testing.T) {
 	// Arrange
-	r := new(repository.MockCats)
+	s := new(service.MockCats)
 	id := uuid.New().String()
-	r.On("GetOne", mockContext, mock.AnythingOfType("uuid.UUID")).Return(entities.Cat{}, errSomeError)
+	s.On("GetOne", mockContext, mock.AnythingOfType("uuid.UUID")).Return(entities.Cat{}, errSomeError)
 	ctx, _ := setup(http.MethodGet, nil)
 	ctx.SetParamNames("id")
 	ctx.SetParamValues(id)
 
 	// Act
-	err := GetCat(r)(ctx)
+	err := GetCat(s)(ctx)
 
 	// Assert
 	require.Error(t, err)
@@ -169,7 +169,7 @@ func TestAddNewCatServiceFailed(t *testing.T) {
 
 func TestDeleteCat(t *testing.T) {
 	// Arrange
-	s := new(repository.MockCats)
+	s := new(service.MockCats)
 	id := bella.ID
 	s.On("Delete", mockContext, id).Return(nil)
 	ctx, rec := setup(http.MethodDelete, nil)
@@ -187,13 +187,13 @@ func TestDeleteCat(t *testing.T) {
 
 func TestDeleteCatFailed(t *testing.T) {
 	// Arrange
-	r := new(repository.MockCats)
+	s := new(service.MockCats)
 	ctx, _ := setup(http.MethodDelete, nil)
 	ctx.SetParamNames("id")
 	ctx.SetParamValues("malformed-uuid")
 
 	// Act
-	err := DeleteCat(r)(ctx)
+	err := DeleteCat(s)(ctx)
 
 	// Assert
 	require.Error(t, err)
@@ -202,15 +202,15 @@ func TestDeleteCatFailed(t *testing.T) {
 
 func TestDeleteCatNotFound(t *testing.T) {
 	// Arrange
-	r := new(repository.MockCats)
+	s := new(service.MockCats)
 	id := uuid.New().String()
-	r.On("Delete", mockContext, mock.AnythingOfType("uuid.UUID")).Return(repository.ErrNotFound)
+	s.On("Delete", mockContext, mock.AnythingOfType("uuid.UUID")).Return(repository.ErrNotFound)
 	ctx, _ := setup(http.MethodDelete, nil)
 	ctx.SetParamNames("id")
 	ctx.SetParamValues(id)
 
 	// Act
-	err := DeleteCat(r)(ctx)
+	err := DeleteCat(s)(ctx)
 
 	// Assert
 	require.Error(t, err)

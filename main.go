@@ -4,7 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+
+	grpcService "github.com/evleria/mongo-crud/internal/grpc"
+	"github.com/evleria/mongo-crud/internal/pb"
 
 	"github.com/caarlos0/env/v6"
 
@@ -52,13 +59,27 @@ func main() {
 	e.Use(middleware.Recover())
 
 	catsGroup := e.Group("/api/cats")
-	catsGroup.GET("", handler.GetAllCats(catsRepository))
-	catsGroup.GET("/:id", handler.GetCat(catsRepository))
+	catsGroup.GET("", handler.GetAllCats(catsService))
+	catsGroup.GET("/:id", handler.GetCat(catsService))
 	catsGroup.POST("", handler.AddNewCat(catsService))
 	catsGroup.PUT("/:id/price", handler.UpdatePrice(catsService))
-	catsGroup.DELETE("/:id", handler.DeleteCat(catsRepository))
+	catsGroup.DELETE("/:id", handler.DeleteCat(catsService))
+
+	go startGrpcServer(catsService, ":6000")
 
 	check(e.Start(":5000"))
+}
+
+func startGrpcServer(catsService service.Cats, port string) {
+	listener, err := net.Listen("tcp", port)
+	check(err)
+
+	s := grpc.NewServer()
+	pb.RegisterCatsServiceServer(s, grpcService.NewCatsService(catsService))
+	reflection.Register(s)
+
+	fmt.Printf("Starting gRPC server on port %s\n", port)
+	check(s.Serve(listener))
 }
 
 func consumePrices(redisClient *redis.Client, rabbitChannel *amqp.Channel, consumerNumber int) {

@@ -14,9 +14,9 @@ import (
 )
 
 // GetAllCats fetches all entities from cats collection
-func GetAllCats(catsRepository repository.Cats) echo.HandlerFunc {
+func GetAllCats(catsService service.Cats) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		cats, err := catsRepository.GetAll(ctx.Request().Context())
+		cats, err := catsService.GetAll(ctx.Request().Context())
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
@@ -27,7 +27,7 @@ func GetAllCats(catsRepository repository.Cats) echo.HandlerFunc {
 }
 
 // GetCat fetches a single cat from cats collection by ID
-func GetCat(catsRepository repository.Cats) echo.HandlerFunc {
+func GetCat(catsService service.Cats) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		idParam := ctx.Param("id")
 		id, err := uuid.Parse(idParam)
@@ -35,7 +35,7 @@ func GetCat(catsRepository repository.Cats) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusBadRequest)
 		}
 
-		cat, err := catsRepository.GetOne(ctx.Request().Context(), id)
+		cat, err := catsService.GetOne(ctx.Request().Context(), id)
 		if errors.Is(err, repository.ErrNotFound) {
 			return echo.NewHTTPError(http.StatusNotFound)
 		} else if err != nil {
@@ -69,18 +69,18 @@ func AddNewCat(catsService service.Cats) echo.HandlerFunc {
 }
 
 // DeleteCat deletes a single cat from cats collection by ID
-func DeleteCat(catsRepository repository.Cats) echo.HandlerFunc {
+func DeleteCat(catsService service.Cats) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		idParam := ctx.Param("id")
 		id, err := uuid.Parse(idParam)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest)
 		}
-		err = catsRepository.Delete(ctx.Request().Context(), id)
+		err = catsService.Delete(ctx.Request().Context(), id)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusNotFound)
 		}
-		return nil
+		return ctx.NoContent(http.StatusOK)
 	}
 }
 
