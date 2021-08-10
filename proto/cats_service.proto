@@ -1,0 +1,54 @@
+syntax="proto3";
+
+import "google/protobuf/empty.proto";
+
+option go_package = "/pb";
+
+service CatsService {
+  rpc GetAllCats (google.protobuf.Empty) returns (GetAllResponse) {}
+  rpc GetCat (GetCatRequest) returns (GetCatResponse) {}
+  rpc AddNewCat (AddNewCatRequest) returns (AddNewCatResponse) {}
+  rpc DeleteCat (DeleteCatRequest) returns (google.protobuf.Empty) {}
+  rpc UpdatePrice (UpdatePriceRequest) returns (google.protobuf.Empty) {}
+}
+
+message GetAllResponse {
+  repeated Cat cats = 1;
+}
+
+message GetCatRequest {
+  string id = 1;
+}
+
+message GetCatResponse {
+  Cat cat = 1;
+}
+
+message AddNewCatRequest {
+  string name = 1;
+  string color = 2;
+  int64 age = 3;
+  double price = 4;
+}
+
+message AddNewCatResponse {
+  string id = 1;
+}
+
+message DeleteCatRequest {
+  string id = 1;
+}
+
+message UpdatePriceRequest{
+  string id = 1;
+  double price = 2;
+}
+
+message Cat {
+  string id = 1;
+  string name = 2;
+  string color = 3;
+  int64 age = 4;
+  double price = 5;
+}
+

@@ -10,5 +10,9 @@ import:
 	goimports -local "github.com/evleria/mongo-crud" -w .
 gen-mocks:
 	mockery --all --recursive --inpackage --case underscore
+protoc:
+	 rm -rf ./internal/pb && protoc --proto_path=proto proto/*.proto --go_out=./internal --go-grpc_out=./internal
+grpcui:
+	grpcui -plaintext localhost:$(PORT)
 
-.PHONY: swag, compose-build, compose-up, compose-down, lint, import, gen-mocks
+.PHONY: swag, compose-build, compose-up, compose-down, lint, import, gen-mocks, protoc, grpcui
