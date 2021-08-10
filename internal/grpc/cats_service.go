@@ -38,7 +38,7 @@ func (s *CatsService) GetAllCats(_ *empty.Empty, stream pb.CatsService_GetAllCat
 	}
 
 	for _, cat := range mapCats(cats) {
-		<-time.After(time.Second)
+		<-time.After(time.Millisecond * 100)
 		err := stream.Send(&pb.GetAllCatsResponse{
 			Cat: cat,
 		})
