@@ -4,6 +4,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/google/uuid"
@@ -30,16 +31,22 @@ func NewCatsService(catsService service.Cats) pb.CatsServiceServer {
 }
 
 // GetAllCats fetches all cats from cats collection
-func (s *CatsService) GetAllCats(ctx context.Context, _ *empty.Empty) (*pb.GetAllResponse, error) {
-	cats, err := s.service.GetAll(ctx)
+func (s *CatsService) GetAllCats(_ *empty.Empty, stream pb.CatsService_GetAllCatsServer) error {
+	cats, err := s.service.GetAll(stream.Context())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return status.Error(codes.Internal, err.Error())
 	}
 
-	response := &pb.GetAllResponse{
-		Cats: mapCats(cats),
+	for _, cat := range mapCats(cats) {
+		<-time.After(time.Second)
+		err := stream.Send(&pb.GetAllCatsResponse{
+			Cat: cat,
+		})
+		if err != nil {
+			return err
+		}
 	}
-	return response, nil
+	return nil
 }
 
 // GetCat fetches a cat from cats collection by ID

@@ -4,7 +4,6 @@ package pb
 
 import (
 	context "context"
-
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -20,7 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CatsServiceClient interface {
-	GetAllCats(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetAllResponse, error)
+	GetAllCats(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (CatsService_GetAllCatsClient, error)
 	GetCat(ctx context.Context, in *GetCatRequest, opts ...grpc.CallOption) (*GetCatResponse, error)
 	AddNewCat(ctx context.Context, in *AddNewCatRequest, opts ...grpc.CallOption) (*AddNewCatResponse, error)
 	DeleteCat(ctx context.Context, in *DeleteCatRequest, opts ...grpc.CallOption) (*empty.Empty, error)
@@ -35,13 +34,36 @@ func NewCatsServiceClient(cc grpc.ClientConnInterface) CatsServiceClient {
 	return &catsServiceClient{cc}
 }
 
-func (c *catsServiceClient) GetAllCats(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetAllResponse, error) {
-	out := new(GetAllResponse)
-	err := c.cc.Invoke(ctx, "/CatsService/GetAllCats", in, out, opts...)
+func (c *catsServiceClient) GetAllCats(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (CatsService_GetAllCatsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &CatsService_ServiceDesc.Streams[0], "/CatsService/GetAllCats", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &catsServiceGetAllCatsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type CatsService_GetAllCatsClient interface {
+	Recv() (*GetAllCatsResponse, error)
+	grpc.ClientStream
+}
+
+type catsServiceGetAllCatsClient struct {
+	grpc.ClientStream
+}
+
+func (x *catsServiceGetAllCatsClient) Recv() (*GetAllCatsResponse, error) {
+	m := new(GetAllCatsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *catsServiceClient) GetCat(ctx context.Context, in *GetCatRequest, opts ...grpc.CallOption) (*GetCatResponse, error) {
@@ -84,7 +106,7 @@ func (c *catsServiceClient) UpdatePrice(ctx context.Context, in *UpdatePriceRequ
 // All implementations must embed UnimplementedCatsServiceServer
 // for forward compatibility
 type CatsServiceServer interface {
-	GetAllCats(context.Context, *empty.Empty) (*GetAllResponse, error)
+	GetAllCats(*empty.Empty, CatsService_GetAllCatsServer) error
 	GetCat(context.Context, *GetCatRequest) (*GetCatResponse, error)
 	AddNewCat(context.Context, *AddNewCatRequest) (*AddNewCatResponse, error)
 	DeleteCat(context.Context, *DeleteCatRequest) (*empty.Empty, error)
@@ -96,8 +118,8 @@ type CatsServiceServer interface {
 type UnimplementedCatsServiceServer struct {
 }
 
-func (UnimplementedCatsServiceServer) GetAllCats(context.Context, *empty.Empty) (*GetAllResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAllCats not implemented")
+func (UnimplementedCatsServiceServer) GetAllCats(*empty.Empty, CatsService_GetAllCatsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetAllCats not implemented")
 }
 func (UnimplementedCatsServiceServer) GetCat(context.Context, *GetCatRequest) (*GetCatResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCat not implemented")
@@ -124,22 +146,25 @@ func RegisterCatsServiceServer(s grpc.ServiceRegistrar, srv CatsServiceServer) {
 	s.RegisterService(&CatsService_ServiceDesc, srv)
 }
 
-func _CatsService_GetAllCats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
+func _CatsService_GetAllCats_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(empty.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(CatsServiceServer).GetAllCats(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/CatsService/GetAllCats",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CatsServiceServer).GetAllCats(ctx, req.(*empty.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(CatsServiceServer).GetAllCats(m, &catsServiceGetAllCatsServer{stream})
+}
+
+type CatsService_GetAllCatsServer interface {
+	Send(*GetAllCatsResponse) error
+	grpc.ServerStream
+}
+
+type catsServiceGetAllCatsServer struct {
+	grpc.ServerStream
+}
+
+func (x *catsServiceGetAllCatsServer) Send(m *GetAllCatsResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _CatsService_GetCat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -222,10 +247,6 @@ var CatsService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*CatsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetAllCats",
-			Handler:    _CatsService_GetAllCats_Handler,
-		},
-		{
 			MethodName: "GetCat",
 			Handler:    _CatsService_GetCat_Handler,
 		},
@@ -242,6 +263,12 @@ var CatsService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CatsService_UpdatePrice_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetAllCats",
+			Handler:       _CatsService_GetAllCats_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "cats_service.proto",
 }

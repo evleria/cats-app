@@ -5,15 +5,15 @@ import "google/protobuf/empty.proto";
 option go_package = "/pb";
 
 service CatsService {
-  rpc GetAllCats (google.protobuf.Empty) returns (GetAllResponse) {}
+  rpc GetAllCats (google.protobuf.Empty) returns (stream GetAllCatsResponse) {}
   rpc GetCat (GetCatRequest) returns (GetCatResponse) {}
   rpc AddNewCat (AddNewCatRequest) returns (AddNewCatResponse) {}
   rpc DeleteCat (DeleteCatRequest) returns (google.protobuf.Empty) {}
   rpc UpdatePrice (UpdatePriceRequest) returns (google.protobuf.Empty) {}
 }
 
-message GetAllResponse {
-  repeated Cat cats = 1;
+message GetAllCatsResponse {
+  Cat cat = 1;
 }
 
 message GetCatRequest {

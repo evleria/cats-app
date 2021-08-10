@@ -7,6 +7,7 @@ RUN go mod download
 
 COPY main.go /
 COPY /internal /internal
+COPY /protocol /protocol
 RUN go build -o server ./main.go
 
 FROM alpine
