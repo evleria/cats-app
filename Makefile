@@ -7,11 +7,11 @@ compose-down:
 lint:
 	golangci-lint run ./internal/... && golangci-lint run ./main.go
 import:
-	goimports -local "github.com/evleria/mongo-crud" -w .
+	goimports -local "github.com/evleria/cats-app" -w .
 gen-mocks:
 	mockery --all --recursive --inpackage --case underscore
 protoc:
-	 rm -rf ./internal/pb && protoc --proto_path=proto proto/*.proto --go_out=./internal --go-grpc_out=./internal
+	 rm -rf ./protocol/pb && protoc --proto_path=protocol/proto protocol/proto/*.proto --go_out=./protocol --go-grpc_out=./protocol
 grpcui:
 	grpcui -plaintext localhost:$(PORT)
 

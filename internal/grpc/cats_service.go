@@ -10,10 +10,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/evleria/mongo-crud/internal/pb"
-	"github.com/evleria/mongo-crud/internal/repository"
-	"github.com/evleria/mongo-crud/internal/repository/entities"
-	"github.com/evleria/mongo-crud/internal/service"
+	"github.com/evleria/cats-app/internal/repository"
+	"github.com/evleria/cats-app/internal/repository/entities"
+	"github.com/evleria/cats-app/internal/service"
+	"github.com/evleria/cats-app/protocol/pb"
 )
 
 // CatsService grpc service implementation of pb.CatsServiceServer

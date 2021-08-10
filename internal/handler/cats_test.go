@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/evleria/mongo-crud/internal/repository"
-	"github.com/evleria/mongo-crud/internal/repository/entities"
-	"github.com/evleria/mongo-crud/internal/service"
+	"github.com/evleria/cats-app/internal/repository"
+	"github.com/evleria/cats-app/internal/repository/entities"
+	"github.com/evleria/cats-app/internal/service"
 )
 
 var (

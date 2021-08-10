@@ -7,16 +7,7 @@ import (
 	"net"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-
-	grpcService "github.com/evleria/mongo-crud/internal/grpc"
-	"github.com/evleria/mongo-crud/internal/pb"
-
 	"github.com/caarlos0/env/v6"
-
-	"github.com/evleria/mongo-crud/internal/config"
-
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -24,12 +15,17 @@ import (
 	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
-	"github.com/evleria/mongo-crud/internal/consumer"
-	"github.com/evleria/mongo-crud/internal/handler"
-	"github.com/evleria/mongo-crud/internal/producer"
-	"github.com/evleria/mongo-crud/internal/repository"
-	"github.com/evleria/mongo-crud/internal/service"
+	"github.com/evleria/cats-app/internal/config"
+	"github.com/evleria/cats-app/internal/consumer"
+	grpcService "github.com/evleria/cats-app/internal/grpc"
+	"github.com/evleria/cats-app/internal/handler"
+	"github.com/evleria/cats-app/internal/producer"
+	"github.com/evleria/cats-app/internal/repository"
+	"github.com/evleria/cats-app/internal/service"
+	"github.com/evleria/cats-app/protocol/pb"
 )
 
 func main() {

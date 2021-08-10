@@ -20,7 +20,7 @@ linters-settings:
   gocyclo:
     min-complexity: 15
   goimports:
-    local-prefixes: github.com/evleria/mongo-crud
+    local-prefixes: github.com/evleria/cats-app
   golint:
     min-confidence: 0.8
   govet:

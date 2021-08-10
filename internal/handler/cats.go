@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
-	"github.com/evleria/mongo-crud/internal/repository"
-	"github.com/evleria/mongo-crud/internal/repository/entities"
-	"github.com/evleria/mongo-crud/internal/service"
+	"github.com/evleria/cats-app/internal/repository"
+	"github.com/evleria/cats-app/internal/repository/entities"
+	"github.com/evleria/cats-app/internal/service"
 )
 
 // GetAllCats fetches all entities from cats collection

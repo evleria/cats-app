@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/evleria/mongo-crud/internal/producer"
-	"github.com/evleria/mongo-crud/internal/repository"
-	"github.com/evleria/mongo-crud/internal/repository/entities"
+	"github.com/evleria/cats-app/internal/producer"
+	"github.com/evleria/cats-app/internal/repository"
+	"github.com/evleria/cats-app/internal/repository/entities"
 )
 
 // Cats contains usecase logic for cats

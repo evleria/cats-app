@@ -1,4 +1,4 @@
-module github.com/evleria/mongo-crud
+module github.com/evleria/cats-app
 
 go 1.16
 

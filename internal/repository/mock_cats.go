@@ -7,7 +7,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	entities "github.com/evleria/mongo-crud/internal/repository/entities"
+	entities "github.com/evleria/cats-app/internal/repository/entities"
 
 	uuid "github.com/google/uuid"
 )
